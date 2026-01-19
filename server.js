@@ -337,7 +337,7 @@ app.get('/api/user-info/:id', (req, res) => {
 // ✅ Thêm / cập nhật thông tin user (có thể có ảnh)
 app.post('/api/user-info', upload.single('avatar'), (req, res) => {
   const { user_id, full_name, date_of_birth, gender, address, phone } = req.body;
-  const image_url = req.file ? `http://localhost:3000/uploads/${req.file.filename}` : null;
+  const image_url = req.file ? `https://backend-warehouse-production-d24c.up.railway.app/uploads/${req.file.filename}` : null;
 
   const sql = `
     INSERT INTO user_info (user_id, full_name, date_of_birth, gender, address, phone, image_url)
@@ -386,7 +386,7 @@ app.post('/api/phieu-nhap', upload.any(), (req, res) => {
   // ✅ Ưu tiên logo mới (file), nếu không có thì dùng logo_url cũ
   const logoFile = files.find(f => f.fieldname === 'logo');
   const logo_url = logoFile
-    ? `http://localhost:3000/uploads/${logoFile.filename}`
+    ? `https://backend-warehouse-production-d24c.up.railway.app/uploads/${logoFile.filename}`
     : fields.logo_url || null;
 
   let products = [];
@@ -453,7 +453,7 @@ app.post('/api/phieu-nhap', upload.any(), (req, res) => {
         products.forEach((item, i) => {
           const img = files.find(f => f.fieldname === `product_image_${i}`);
           const image_url = img
-            ? `http://localhost:3000/uploads/${img.filename}`
+            ? `https://backend-warehouse-production-d24c.up.railway.app/uploads/${img.filename}`
             : item.image_url || null;
 
           db.query(
@@ -716,7 +716,7 @@ app.put('/api/products-detail/:id', upload.fields([
     expiry_date = null
   } = req.body;
 
-  const BASE_URL = 'http://localhost:3000';
+  const BASE_URL = 'https://backend-warehouse-production-d24c.up.railway.app';
 
   // Lấy URL mới nếu upload, nếu không thì giữ URL cũ
   let imageUrl = req.body.image_url || '';
@@ -988,7 +988,7 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
   }
 
   // Trả về URL đầy đủ với domain backend (localhost:3000)
-  const imageUrl = `http://localhost:3000/uploads/${req.file.filename}`;
+  const imageUrl = `https://backend-warehouse-production-d24c.up.railway.app/uploads/${req.file.filename}`;
   res.json({ imageUrl });
 });
 
@@ -1146,10 +1146,10 @@ app.post('/api/products-detail', upload.fields([
 
   // Chuẩn hóa đường dẫn ảnh
   const normalizePath = file =>
-    file?.path ? `http://localhost:3000/uploads/${path.basename(file.path)}` : null;
+    file?.path ? `https://backend-warehouse-production-d24c.up.railway.app/uploads/${path.basename(file.path)}` : null;
 
-  const image_url = normalizePath(req.files?.image?.[0]) || sp.image_url || 'http://localhost:3000/uploads/default.png';
-  const logo_url = normalizePath(req.files?.logo?.[0]) || sp.logo_url || 'http://localhost:3000/uploads/logogpt.png';
+  const image_url = normalizePath(req.files?.image?.[0]) || sp.image_url || 'https://backend-warehouse-production-d24c.up.railway.app/uploads/default.png';
+  const logo_url = normalizePath(req.files?.logo?.[0]) || sp.logo_url || 'https://backend-warehouse-production-d24c.up.railway.app/uploads/logogpt.png';
 
   // ======= Kiểm tra dữ liệu hợp lệ =======
   const requiredFields = ['product_code', 'product_name', 'product_type', 'unit', 'quantity', 'unit_price', 'weight', 'area', 'manufacture_date', 'expiry_date'];
@@ -1272,7 +1272,7 @@ app.put('/api/products/:id', upload.fields([
     return res.status(400).json({ message: 'ID không hợp lệ' });
   }
 
-  const BASE_URL = 'http://localhost:3000';
+  const BASE_URL = 'https://backend-warehouse-production-d24c.up.railway.app';
   let { product_name, product_code, product_type, unit, image_url, logo_url } = req.body;
 
   // ✅ Nếu upload mới thì lấy file mới
@@ -3774,7 +3774,7 @@ app.put('/api/phieu-xuat-kho/:id/huy', (req, res) => {
 // ========================== SERVER ==========================
 
 app.listen(3000, () => {
-  console.log('✅ Server chạy tại http://localhost:3000');
+  console.log('✅ Server chạy tại https://backend-warehouse-production-d24c.up.railway.app');
 });
 
 app.put('/api/products-detail/distribute', (req, res) => {
