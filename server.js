@@ -24,7 +24,7 @@ app.use('/uploads', express.static('uploads'));
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
-  password: process.env.DB_PASS,
+  password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: process.env.DB_PORT
 });
@@ -42,6 +42,8 @@ db.connect(err => {
 // Secret key JWT
 const JWT_SECRET = process.env.JWT_SECRET;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+console.log('JWT_SECRET:', JWT_SECRET);
 
 const PORT = process.env.PORT || 3000;
 
