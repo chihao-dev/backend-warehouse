@@ -21,23 +21,31 @@ app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 app.use('/uploads', express.static('uploads'));
 
 // Kết nối CSDL
-const db = mysql.createConnection({
+const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
-  port: process.env.DB_PORT
+  port: process.env.DB_PORT,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0
 });
 
-db.connect(err => {
+// Test pool
+db.getConnection((err, connection) => {
   if (err) {
-    console.error('❌ DB connect failed:', err.message);
+    console.error('❌ DB Pool error:', err);
   } else {
-    console.log('✅ Connected to DB');
+    console.log('✅ MySQL Pool connected');
     console.log('👉 DB_HOST =', process.env.DB_HOST);
     console.log('👉 DB_NAME =', process.env.DB_NAME);
+    connection.release();
   }
 });
+
 
 // Secret key JWT
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -118,63 +126,54 @@ app.post('/api/login', (req, res) => {
     'SELECT * FROM users WHERE email = ?',
     [email],
     async (err, results) => {
-
-      try {
-        console.log('❗ DB error:', err);
-        console.log('📦 Query results:', results);
-
-        if (err) {
-          return res.status(500).json({ message: 'Lỗi server' });
-        }
-
-        if (!results || results.length === 0) {
-          return res.status(401).json({ message: 'Email không tồn tại' });
-        }
-
-        const user = results[0];
-
-        if (user.status === 'inactive') {
-          return res.status(403).json({
-            message: 'Tài khoản đã bị ngưng hoạt động'
-          });
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password);
-        console.log('🔐 Password match:', isMatch);
-
-        if (!isMatch) {
-          return res.status(401).json({ message: 'Sai mật khẩu' });
-        }
-
-        const token = jwt.sign(
-          { id: user.id, role: user.role },
-          process.env.JWT_SECRET, // ❗ dùng env cho chắc
-          { expiresIn: '1h' }
-        );
-
-        return res.json({
-          token,
-          id: user.id,
-          role: user.role,
-          name: user.name,
-          email: user.email
-        });
-
-      } catch (error) {
-        console.error('🔥 LOGIN ERROR:', error);
+      if (err) {
+        console.error('❌ DB error:', err);
         return res.status(500).json({ message: 'Lỗi server' });
       }
+
+      if (!results || results.length === 0) {
+        return res.status(401).json({ message: 'Email không tồn tại' });
+      }
+
+      const user = results[0];
+
+      if (user.status === 'inactive') {
+        return res.status(403).json({
+          message: 'Tài khoản đã bị ngưng hoạt động'
+        });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      console.log('🔐 Password match:', isMatch);
+
+      if (!isMatch) {
+        return res.status(401).json({ message: 'Sai mật khẩu' });
+      }
+
+      const token = jwt.sign(
+        { id: user.id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      res.json({
+        token,
+        id: user.id,
+        role: user.role,
+        name: user.name,
+        email: user.email
+      });
     }
   );
-}); 
- 
+});
+
 
 // tạo admin mặc định nếu chưa có
 const createAdminAccount = async () => {
   const adminEmail = 'admin@gmail.com';
 
   db.query(
-    'SELECT * FROM users WHERE email = ?',
+    'SELECT id FROM users WHERE email = ?',
     [adminEmail],
     async (err, results) => {
       if (err) {
@@ -192,19 +191,18 @@ const createAdminAccount = async () => {
       db.query(
         'INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, ?)',
         ['Administrator', adminEmail, hashedPassword, 'admin', 'active'],
-        (err) => {
+        err => {
           if (err) {
             console.error('❌ Lỗi tạo admin:', err);
           } else {
             console.log('🎉 Đã tạo tài khoản admin mặc định');
-            console.log('👉 Email: admin@gmail.com');
-            console.log('👉 Password: admin123');
           }
         }
       );
     }
   );
 };
+
 
 // Gọi hàm khi server start
 createAdminAccount();
